@@ -1,0 +1,82 @@
+// head {
+@__nodeId__: ~"std_controls_form__main";
+// }
+
+.@{__nodeId__} {
+
+    .hoverable() {
+        cursor: pointer;
+
+        &.hover {
+            background-color: #FAFAFA;
+        }
+    }
+
+    .padding() {
+
+        padding: 10px;
+    }
+
+    .select() {
+
+        padding: 7px 10px;
+    }
+
+    .txtControlContainer() {
+
+        input {
+            background-color: #FFFAE5;
+            box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3) inset;
+        }
+
+        .txt {
+            padding: 10px;
+        }
+    }
+
+    > .table {
+        display: table;
+        width: 100%;
+        border-spacing: 1px;
+
+        .row {
+            display: table-row;
+
+            > .cell {
+                display: table-cell;
+                vertical-align: middle;
+
+                &.label {
+                    padding: 10px;
+                    width: 1px;
+                    vertical-align: top;
+                    white-space: nowrap;
+                    background-color: #E9E9E9;
+                }
+
+                &.value {
+                    cursor: pointer;
+                    position: relative;
+                    min-width: 200px;
+                    background-color: #F4F4F4;
+
+                    &.hoverable {
+                        .hoverable;
+                    }
+
+                    &.padding {
+                        .padding;
+                    }
+
+                    &.select {
+                        .select;
+                    }
+
+                    &.txt {
+                        .txtControlContainer;
+                    }
+                }
+            }
+        }
+    }
+}
