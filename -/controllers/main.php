@@ -39,10 +39,19 @@ class Main extends \Controller
             }
 
             $v->assign('field', [
+                'FIELD'   => $field,
                 'LABEL'   => $label,
                 'CLASS'   => $field . ' ' . ($fieldData['class'] ?? ''),
                 'CONTROL' => $content
             ]);
+
+            if ($cellClickCall = $this->data('cells_click_calls/' . $field)) {
+                $this->c('\std\ui button:bind', [
+                    'selector' => $this->_selector('|') . " .row[field='" . $field . "']",
+                    'path'     => $cellClickCall[0],
+                    'data'     => $this->tokenizeData($model, $field, $cellClickCall[1] ?? [])
+                ]);
+            }
         }
 
         $this->css();
@@ -52,40 +61,71 @@ class Main extends \Controller
 
     private function getFields()
     {
-        $columns = handlers()->render($this->data('handlers/fields'));
+        $fields = handlers()->render($this->data('handlers/fields'));
 
         $output = [];
 
-        foreach ($columns as $columnId => $column) {
-            $output[$columnId] = $this->fixControl($columnId, $column);
+        foreach ($fields as $fieldId => $field) {
+            $output[$fieldId] = $this->fixControl($fieldId, $field);
         }
 
         return $output;
     }
 
-    private function fixControl($columnId, $column)
+    private function fixControl($fieldId, $field)
     {
-        if (!empty($column['control'])) {
-            $control = &$column['control'];
+        if (!empty($field['control'])) {
+            $fieldControl = &$field['control'];
 
             $controlsData = $this->getControlsData();
 
-            if ($controlCall = ap($controlsData, $control[0])) {
-                $control[0] = $controlCall['path'];
+            if ($controlCall = ap($controlsData, $fieldControl[0])) {
+                $controlPath = $controlCall['path'];
+                $controlData = $controlCall['data'] ?? [];
+
+                ra($controlData, $fieldControl[1] ?? []);
+
+                $controlData = $this->tokenizeData($this->model, $fieldId, $controlData);
+
+                $fieldControl[0] = $controlPath;
+                $fieldControl[1] = $controlData;
+            } else {
+                $fieldControl[1] = $this->tokenizeData($this->model, $fieldId, $fieldControl[1]);
             }
-
-            $controlData = $control[1] ?? [];
-
-            ra($controlData, $controlCall['data'] ?? []);
-
-            $control[1] = [
-                'model' => $this->model,
-                'field' => $columnId,
-                'data'  => $controlData
-            ];
         }
 
-        return $column;
+        return $field;
+    }
+
+    private function tokenizeData($model, $columnId, $data)
+    {
+        $flatten = a2f($data);
+
+        foreach ($flatten as $path => $value) {
+            if ($value === '%model') {
+                $flatten[$path] = $model;
+            } elseif ($value === '%model_id') {
+                $flatten[$path] = $model->id;
+            } elseif ($value === '%pack') {
+                $flatten[$path] = pack_model($model);
+            } elseif ($value === '%xpack') {
+                $flatten[$path] = xpack_model($model);
+            } elseif ($value === '%cell') {
+                $flatten[$path] = pack_cell($model, $columnId); // будет работать только для полей в текущей таблице (не на связях)
+            }
+
+            if (null !== $columnId) {
+                if ($value === '%column_id') {
+                    $flatten[$path] = $columnId;
+                } elseif ($value === '%value') {
+                    $flatten[$path] = $model->{$columnId};
+                }
+            }
+        }
+
+        $output = f2a($flatten);
+
+        return $output;
     }
 
     private $controlsData;
